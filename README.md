@@ -1,2 +1,6 @@
 # Multithreaded-Raytracer
-Multithreaded raytracer, based on https://raytracing.github.io/books/RayTracingInOneWeekend.html
+*based on https://raytracing.github.io/books/RayTracingInOneWeekend.html*
+
+![Raytracer demo](raytracer.jpg)
+
+Simple Raytracer made in C++ from scratch.
