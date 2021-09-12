@@ -1,6 +1,13 @@
 # Prerequisites
 *.d
 
+# Mac
+.DS_Store
+
+# Misc
+/docs
+/cmake-build-debug
+
 # Compiled Object files
 *.slo
 *.lo
