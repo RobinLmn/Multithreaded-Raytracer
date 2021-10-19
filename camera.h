@@ -43,6 +43,11 @@ public:
     point3 lower_left_corner;
     vec3 u, v, w;
     double length_radius;
+
+    const int image_width = 1200;
+    const int image_height = static_cast<int>(image_width / (3.0/2.0));
+    const int samples_per_pixel = 100;
+    const int max_depth = 10;
 };
 
 #endif //RAYTRACER_CAMERA_H

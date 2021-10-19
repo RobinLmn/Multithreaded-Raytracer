@@ -5,6 +5,7 @@
 //
 
 #include <iostream>
+#include <thread>
 
 #include "raytracer.h"
 #include "color.h"
@@ -79,6 +80,26 @@ hittable_list random_scene() {
     return world;
 }
 
+void draw(camera cam, hittable_list world, int start, int end, std::vector<color>* out) {
+    int i = (cam.image_height - start) * cam.image_width;
+
+    for (int y = start - 1; y >= end; y--)
+    {
+
+        for (int x = 0; x < cam.image_width; x++)
+        {
+            color pixel_color;
+            for (int s = 0; s < cam.samples_per_pixel; s++) {
+                double u = (x + random_double()) / (cam.image_width - 1);
+                double v = (y + random_double()) / (cam.image_height - 1);
+                ray r = cam.get_ray(u, v);
+                pixel_color += ray_color(r, world, cam.max_depth);
+            }
+            out->at(i) = pixel_color;
+            i++;
+        }
+    }
+}
 
 int main() {
 
@@ -94,34 +115,37 @@ int main() {
 
     camera camera(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
-    const int image_width = 1200;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 500;
-    const int max_depth = 50;
-
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    std::cout << "P3\n" << camera.image_width << ' ' << camera.image_height << "\n255\n";
 
     hittable_list world = random_scene();
+    std::vector<color> image(camera.image_height * camera.image_width);
 
-    // DRAWING
+    // Init threads
 
-    for (int y = image_height-1; y >= 0; y--)   // columns are read from top to bottom
+    int num_threads = 16;
+    std::vector<std::thread> threads(num_threads);
+
+    int segment = camera.image_height / num_threads;
+    int segment_start = camera.image_height;
+    int segment_end = segment_start - segment;
+
+    for (int i=0; i < num_threads; i++)
     {
-        std::cerr << "\rScanlines remaining: " << y << ' ' << std::flush;
+        threads[i] = std::thread(draw, camera, world, segment_start, segment_end, &image);
+        segment_start = segment_end;
+        segment_end -= segment;
+    }
 
-        for (int x = 0; x < image_width; x++)
-        {
-            color pixel_color = color();
+    for (int i=0; i < num_threads; i++)
+    {
+        threads[i].join();
+    }
 
-            for (int s=0; s < samples_per_pixel; s++)
-            {
-                double u = (x + random_double()) / (image_width - 1);
-                double v = (y + random_double()) / (image_height - 1);
-                ray r = camera.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);
-            }
-            write_color(std::cout, pixel_color, samples_per_pixel);
-        }
+    std:: cerr << "\nWriting...\n";
+
+    for (color c : image)
+    {
+        write_color(std::cout, c, camera.samples_per_pixel);
     }
 
     std::cerr << "\nDone.\n";
